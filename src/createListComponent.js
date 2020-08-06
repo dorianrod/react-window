@@ -589,7 +589,8 @@ export default function createListComponent({
           scrollDirection:
             prevState.scrollOffset < scrollOffset ? 'forward' : 'backward',
           scrollOffset,
-          scrollMax:  scrollHeight - clientHeight,
+          clientHeight,
+          scrollHeight,
           scrollUpdateWasRequested: false,
         };
       }, this._resetIsScrollingDebounced);
