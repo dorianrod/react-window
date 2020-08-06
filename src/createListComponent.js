@@ -562,6 +562,7 @@ export default function createListComponent({
           scrollDirection:
             prevState.scrollOffset < scrollLeft ? 'forward' : 'backward',
           scrollOffset,
+          scrollMax:  scrollWidth - clientWidth,
           scrollUpdateWasRequested: false,
         };
       }, this._resetIsScrollingDebounced);
@@ -588,6 +589,7 @@ export default function createListComponent({
           scrollDirection:
             prevState.scrollOffset < scrollOffset ? 'forward' : 'backward',
           scrollOffset,
+          scrollMax:  scrollHeight - clientHeight,
           scrollUpdateWasRequested: false,
         };
       }, this._resetIsScrollingDebounced);
