@@ -58,6 +58,7 @@ type InnerProps = {|
 export type Props<T> = {|
   children: RenderComponent<T>,
   className?: string,
+  innerClassName?: string,
   direction: Direction,
   height: number | string,
   initialScrollOffset?: number,
@@ -196,6 +197,14 @@ export default function createListComponent({
       return null;
     }
 
+	getItemOffset(index) {
+		return getItemOffset(this.props, index, this._instanceProps);
+	}
+
+	getItemSize(index) {
+		return getItemSize(this.props, index, this._instanceProps);
+	}
+
     scrollTo(scrollOffset: number): void {
       scrollOffset = Math.max(0, scrollOffset);
 
@@ -212,20 +221,26 @@ export default function createListComponent({
       }, this._resetIsScrollingDebounced);
     }
 
-    scrollToItem(index: number, align: ScrollToAlign = 'auto'): void {
+    scrollToItem(index: number, align: ScrollToAlign = 'auto', options: Object): void {
       const { itemCount } = this.props;
       const { scrollOffset } = this.state;
 
+      const { offset } = options || {}
+
       index = Math.max(0, Math.min(index, itemCount - 1));
 
+      let top = getOffsetForIndexAndAlignment(
+        this.props,
+        index,
+        align,
+        scrollOffset,
+        this._instanceProps
+      );
+
+      if(offset && offset.top) top = top + offset.top
+
       this.scrollTo(
-        getOffsetForIndexAndAlignment(
-          this.props,
-          index,
-          align,
-          scrollOffset,
-          this._instanceProps
-        )
+        top
       );
     }
 
@@ -291,6 +306,7 @@ export default function createListComponent({
       const {
         children,
         className,
+        innerClassName,
         direction,
         height,
         innerRef,
@@ -359,6 +375,7 @@ export default function createListComponent({
         },
         createElement(innerElementType || innerTagName || 'div', {
           children: items,
+          className: innerClassName,
           ref: innerRef,
           style: {
             height: isHorizontal ? '100%' : estimatedTotalSize,
@@ -393,18 +410,25 @@ export default function createListComponent({
     _callOnScroll: (
       scrollDirection: ScrollDirection,
       scrollOffset: number,
-      scrollUpdateWasRequested: boolean
+      scrollUpdateWasRequested: boolean,
+      scrollHeight: number,
+      clientHeight: number
     ) => void;
     _callOnScroll = memoizeOne(
       (
         scrollDirection: ScrollDirection,
         scrollOffset: number,
-        scrollUpdateWasRequested: boolean
+        scrollUpdateWasRequested: boolean,
+        scrollHeight: number,
+        clientHeight: number
+
       ) =>
         ((this.props.onScroll: any): onScrollCallback)({
           scrollDirection,
           scrollOffset,
           scrollUpdateWasRequested,
+          scrollHeight,
+          clientHeight
         })
     );
 
@@ -429,6 +453,8 @@ export default function createListComponent({
 
       if (typeof this.props.onScroll === 'function') {
         const {
+          clientHeight,
+          scrollHeight,
           scrollDirection,
           scrollOffset,
           scrollUpdateWasRequested,
@@ -436,7 +462,9 @@ export default function createListComponent({
         this._callOnScroll(
           scrollDirection,
           scrollOffset,
-          scrollUpdateWasRequested
+          scrollUpdateWasRequested,
+          scrollHeight,
+          clientHeight
         );
       }
     }
@@ -562,7 +590,6 @@ export default function createListComponent({
           scrollDirection:
             prevState.scrollOffset < scrollLeft ? 'forward' : 'backward',
           scrollOffset,
-          scrollMax:  scrollWidth - clientWidth,
           scrollUpdateWasRequested: false,
         };
       }, this._resetIsScrollingDebounced);
